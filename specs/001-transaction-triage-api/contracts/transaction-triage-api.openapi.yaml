@@ -1,0 +1,154 @@
+openapi: 3.1.0
+info:
+  title: Transaction Triage Mock API
+  version: 1.0.0
+  description: Local-only mock transaction triage API. No live banking or external AI integrations.
+paths:
+  /exp-digiServicing-transctiontraige/v1/message:
+    post:
+      summary: Process a customer chat message
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MessageRequest'
+      responses:
+        '200':
+          description: Customer-safe message processing response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '422':
+          $ref: '#/components/responses/InvalidRequest'
+  /exp-digiServicing-transctiontraige/v1/submission:
+    post:
+      summary: Submit a selected transaction for triage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmissionRequest'
+      responses:
+        '200':
+          description: Triage outcome or merchant-refund guidance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResponse'
+        '400':
+          description: Confirmation missing or triage answers are inconsistent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Selected mock transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  responses:
+    InvalidRequest:
+      description: Invalid request payload
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    MessageRequest:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          minLength: 1
+        correlation_id:
+          type: string
+          format: uuid
+    MessageResponse:
+      type: object
+      required: [correlation_id, message, response_type]
+      properties:
+        correlation_id:
+          type: string
+          format: uuid
+        message:
+          type: string
+        response_type:
+          type: string
+          enum: [transaction_matches, triage_question, redirection, not_found, error]
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+        alternative_merchants:
+          type: array
+          maxItems: 3
+          items:
+            type: string
+    SubmissionRequest:
+      type: object
+      required: [transaction_id, merchant_known, confirmed]
+      properties:
+        transaction_id:
+          type: string
+        merchant_known:
+          type: boolean
+        merchant_refund_agreed:
+          type: boolean
+        customer_made_purchase:
+          type: boolean
+        confirmed:
+          type: boolean
+          description: Must be true before a mock case ID can be returned.
+        correlation_id:
+          type: string
+          format: uuid
+    SubmissionResponse:
+      type: object
+      required: [correlation_id, outcome, message, next_steps]
+      properties:
+        correlation_id:
+          type: string
+          format: uuid
+        outcome:
+          type: string
+          enum: [fraud_scam, dispute, merchant_refund_guidance]
+        message:
+          type: string
+        next_steps:
+          type: array
+          items:
+            type: string
+        case_id:
+          type: [string, 'null']
+          description: Local mock case ID; absent for merchant-refund guidance.
+    Transaction:
+      type: object
+      required: [transaction_id, merchant, amount, transaction_date, description]
+      properties:
+        transaction_id:
+          type: string
+        merchant:
+          type: string
+        amount:
+          type: string
+          pattern: '^\d+\.\d{2}$'
+        transaction_date:
+          type: string
+          format: date
+        description:
+          type: string
+    ErrorResponse:
+      type: object
+      required: [correlation_id, message]
+      properties:
+        correlation_id:
+          type: string
+          format: uuid
+        message:
+          type: string
