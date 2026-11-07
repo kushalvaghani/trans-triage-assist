@@ -22,7 +22,7 @@ triage.
 
 **Independent Test**: Analyse a message naming a supported merchant and amount, then verify that the
 agent returns the matching mock transaction. Analyse a non-matching request and verify that exactly
-three alternatives are returned.
+three alternate transactions are returned as a hint.
 
 **Acceptance Scenarios**:
 
