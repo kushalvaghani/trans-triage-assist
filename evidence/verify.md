@@ -16,6 +16,11 @@
 | Agent | `uv run --directory src/agent ruff check .` | PASS |
 | Agent | `uv run --directory src/agent ruff format --check .` | PASS |
 | Agent | Agent lock and dependencies: `uv sync --directory src/agent --extra dev` | PASS |
+| UI | `npm test -- --run` from `src/ui` | PASS — 6 tests across API client, chat, transaction, triage, confirmation, and alternatives components |
+| UI | `npm run lint` from `src/ui` | PASS |
+| UI | `npm run build` from `src/ui` | PASS — TypeScript and Vite production build succeeded |
+| UI | Live Vite-to-API proxy search for “Report $50 at Woolworths” | PASS — displayed shared transaction `txn-001` |
+| UI | Headless Chrome visual checks | PASS — inspected default chat, matching transaction, and triage-question states |
 
 ## Local Verification
 
@@ -39,6 +44,10 @@ uv run --directory src/agent ruff format --check .
 For a manual API check, start `uv run --directory src/api uvicorn api.app:app --host 127.0.0.1 --port 8765`
 and call the two documented POST endpoints.
 
+For the UI, install dependencies with `npm install` in `src/ui`, start the API command above, then run
+`npm run dev -- --host 127.0.0.1 --port 5173` in `src/ui`. Run `npm test -- --run`, `npm run lint`, and
+`npm run build` from `src/ui` before review.
+
 ## PR / Pipeline Verification
 
 No GitHub Actions, GitLab CI, or other pipeline configuration currently exists in this repository.
@@ -50,12 +59,18 @@ When a pipeline is added, it should run the same isolated API and agent suites:
 2. `uv sync --directory src/agent --extra dev --locked`, followed by agent pytest and Ruff checks.
 3. JSON validation for `sample_data/transactions.json` and a smoke test that imports both packages.
 4. An API-to-agent integration test after the API is wired to call `process_interaction`.
+5. `npm ci --prefix src/ui`, then UI Vitest, ESLint, TypeScript/Vite build, and a browser smoke test.
 
 ## Known Gaps
 
 - The API still uses `src/api/triage_service.py`; it does not yet invoke the agent's
   `transaction_agent.engine.process_interaction` function.
-- The React chat UI feature is specified but not implemented or verified.
+- The UI calls only the documented API routes. Current API responses do not expose a session contract for
+  transaction selection and one-question-at-a-time triage, so the UI renders that guided flow locally and
+  calls `/submission` only after explicit confirmation. It does not access agent code or shared fixture
+  data directly.
+- The current API does not return merchant alternatives for unmatched searches, so the UI alternative
+  cards are covered by component tests but not by a live API smoke test.
 - The API and agent each have unit/integration tests, but there is no cross-component API-to-agent
   integration test until the wiring is implemented.
 - FastAPI's `TestClient` currently emits a Starlette deprecation warning about its `httpx` integration.
