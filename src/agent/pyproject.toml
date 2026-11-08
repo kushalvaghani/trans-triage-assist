@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "transaction-triage-agent"
+version = "0.1.0"
+description = "Deterministic local transaction triage reasoning agent"
+requires-python = ">=3.12"
+dependencies = ["pydantic>=2.10,<3.0"]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0,<9.0",
+  "ruff>=0.8,<1.0",
+]
+
+[tool.setuptools]
+packages = ["transaction_agent"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["."]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

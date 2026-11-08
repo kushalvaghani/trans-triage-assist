@@ -19,10 +19,10 @@ behavior it covers and verify it fails on the preceding implementation state.
 
 **Purpose**: Establish the standalone agent package and its local quality tooling.
 
-- [ ] T001 Create the agent package, test package, and package initializer in `src/agent/transaction_agent/__init__.py` and `src/agent/tests/__init__.py`.
-- [ ] T002 Create Python dependency, pytest, and Ruff configuration in `src/agent/pyproject.toml` for Pydantic v2, pytest, and Ruff.
-- [ ] T003 [P] Add ignored local agent session logs in `.gitignore` for `src/agent/logs/`.
-- [ ] T004 Generate the agent dependency lock file at `src/agent/uv.lock` using `uv sync --directory src/agent --extra dev`.
+- [X] T001 Create the agent package, test package, and package initializer in `src/agent/transaction_agent/__init__.py` and `src/agent/tests/__init__.py`.
+- [X] T002 Create Python dependency, pytest, and Ruff configuration in `src/agent/pyproject.toml` for Pydantic v2, pytest, and Ruff.
+- [X] T003 [P] Add ignored local agent session logs in `.gitignore` for `src/agent/logs/`.
+- [X] T004 Generate the agent dependency lock file at `src/agent/uv.lock` using `uv sync --directory src/agent --extra dev`.
 
 ---
 
@@ -33,11 +33,11 @@ flows begin.
 
 **⚠️ CRITICAL**: Complete this phase before any user-story work.
 
-- [ ] T005 Create typed transaction, interaction, result, session, proposal, outcome, and question models in `src/agent/transaction_agent/models.py`, including a required UUID `correlation_id` and positive two-decimal transaction `amount`.
-- [ ] T006 [P] Create regex PII masking helpers for email, phone, card-like, and account-like strings in `src/agent/transaction_agent/pii.py`.
-- [ ] T007 [P] Create correlation-ID-named JSON-lines session logging that accepts only masked event values in `src/agent/transaction_agent/logging_service.py`.
-- [ ] T008 Create a read-only shared-fixture loader in `src/agent/transaction_agent/repository.py` for `sample_data/transactions.json`, validating its 50–100 unique transaction IDs and one mocked customer.
-- [ ] T009 Create the inactive future LLM intent and transaction-tool interface, with comments proving it is never invoked, in `src/agent/transaction_agent/future_llm.py`.
+- [X] T005 Create typed transaction, interaction, result, session, proposal, outcome, and question models in `src/agent/transaction_agent/models.py`, including a required UUID `correlation_id` and positive two-decimal transaction `amount`.
+- [X] T006 [P] Create regex PII masking helpers for email, phone, card-like, and account-like strings in `src/agent/transaction_agent/pii.py`.
+- [X] T007 [P] Create correlation-ID-named JSON-lines session logging that accepts only masked event values in `src/agent/transaction_agent/logging_service.py`.
+- [X] T008 Create a read-only shared-fixture loader in `src/agent/transaction_agent/repository.py` for `sample_data/transactions.json`, validating its 50–100 unique transaction IDs and one mocked customer.
+- [X] T009 Create the inactive future LLM intent and transaction-tool interface, with comments proving it is never invoked, in `src/agent/transaction_agent/future_llm.py`.
 
 **Checkpoint**: The agent has safe contracts and can read the global fixture without network access.
 
@@ -54,16 +54,16 @@ request for details.
 
 ### Tests for User Story 1
 
-- [ ] T010 [P] [US1] Write parser tests for baseline merchants, dollar amounts with and without cents, multiple candidates, and unsupported formats in `src/agent/tests/test_parsing.py`.
-- [ ] T011 [P] [US1] Write search tests for exact match, merchant-first then amount-difference ranking, and exactly three alternatives in `src/agent/tests/test_transaction_search.py`.
-- [ ] T012 [US1] Write interaction tests for reporting intent, request-details response, and masked result content in `src/agent/tests/test_message_flow.py`.
+- [X] T010 [P] [US1] Write parser tests for baseline merchants, dollar amounts with and without cents, multiple candidates, and unsupported formats in `src/agent/tests/test_parsing.py`.
+- [X] T011 [P] [US1] Write search tests for exact match, merchant-first then amount-difference ranking, and exactly three alternatives in `src/agent/tests/test_transaction_search.py`.
+- [X] T012 [US1] Write interaction tests for reporting intent, request-details response, and masked result content in `src/agent/tests/test_message_flow.py`.
 
 ### Implementation for User Story 1
 
-- [ ] T013 [US1] Implement masked keyword intent, merchant, and dollar-amount extraction in `src/agent/transaction_agent/parsing.py`.
-- [ ] T014 [US1] Implement exact and three-alternative transaction searches over `sample_data/transactions.json` in `src/agent/transaction_agent/repository.py`.
-- [ ] T015 [US1] Implement report-message orchestration and customer-safe result kinds in `src/agent/transaction_agent/engine.py`.
-- [ ] T016 [US1] Record masked reporting interactions and search results with their correlation IDs in `src/agent/transaction_agent/logging_service.py`.
+- [X] T013 [US1] Implement masked keyword intent, merchant, and dollar-amount extraction in `src/agent/transaction_agent/parsing.py`.
+- [X] T014 [US1] Implement exact and three-alternative transaction searches over `sample_data/transactions.json` in `src/agent/transaction_agent/repository.py`.
+- [X] T015 [US1] Implement report-message orchestration and customer-safe result kinds in `src/agent/transaction_agent/engine.py`.
+- [X] T016 [US1] Record masked reporting interactions and search results with their correlation IDs in `src/agent/transaction_agent/logging_service.py`.
 
 **Checkpoint**: Transaction search works independently, including safe missing-detail and not-found
 outcomes.
@@ -80,15 +80,15 @@ merchant, known/refund agreed, known/no refund/not made, and known/no refund/mad
 
 ### Tests for User Story 2
 
-- [ ] T017 [P] [US2] Write tests for transaction selection and the ordered three-question state transitions in `src/agent/tests/test_triage_flow.py`.
-- [ ] T018 [P] [US2] Write decision-table tests for Fraud/scam, Dispute, and merchant-refund guidance outcomes in `src/agent/tests/test_triage_flow.py`.
+- [X] T017 [P] [US2] Write tests for transaction selection and the ordered three-question state transitions in `src/agent/tests/test_triage_flow.py`.
+- [X] T018 [P] [US2] Write decision-table tests for Fraud/scam, Dispute, and merchant-refund guidance outcomes in `src/agent/tests/test_triage_flow.py`.
 
 ### Implementation for User Story 2
 
-- [ ] T019 [US2] Implement selected-transaction validation and immutable session state in `src/agent/transaction_agent/models.py`.
-- [ ] T020 [US2] Implement answer parsing and question progression—merchant known, refund agreed, then customer made purchase—in `src/agent/transaction_agent/engine.py`.
-- [ ] T021 [US2] Implement deterministic Fraud/scam, Dispute, and merchant-refund proposal construction with customer-safe next steps in `src/agent/transaction_agent/engine.py`.
-- [ ] T022 [US2] Log only masked triage question and proposal events in `src/agent/transaction_agent/logging_service.py`.
+- [X] T019 [US2] Implement selected-transaction validation and immutable session state in `src/agent/transaction_agent/models.py`.
+- [X] T020 [US2] Implement answer parsing and question progression—merchant known, refund agreed, then customer made purchase—in `src/agent/transaction_agent/engine.py`.
+- [X] T021 [US2] Implement deterministic Fraud/scam, Dispute, and merchant-refund proposal construction with customer-safe next steps in `src/agent/transaction_agent/engine.py`.
+- [X] T022 [US2] Log only masked triage question and proposal events in `src/agent/transaction_agent/logging_service.py`.
 
 **Checkpoint**: A selected transaction reaches a deterministic outcome in no more than three
 questions, with no case created.
@@ -105,14 +105,14 @@ receive one deterministic local mock case ID; confirm merchant-refund guidance a
 
 ### Tests for User Story 3
 
-- [ ] T023 [P] [US3] Write confirmation-gate tests for early, unconfirmed, and repeated confirmations in `src/agent/tests/test_confirmation.py`.
-- [ ] T024 [P] [US3] Write outcome-specific case-ID and merchant-refund no-case tests in `src/agent/tests/test_confirmation.py`.
+- [X] T023 [P] [US3] Write confirmation-gate tests for early, unconfirmed, and repeated confirmations in `src/agent/tests/test_confirmation.py`.
+- [X] T024 [P] [US3] Write outcome-specific case-ID and merchant-refund no-case tests in `src/agent/tests/test_confirmation.py`.
 
 ### Implementation for User Story 3
 
-- [ ] T025 [US3] Implement explicit-confirmation validation and stable local mock case-ID creation in `src/agent/transaction_agent/engine.py`.
-- [ ] T026 [US3] Enforce the immutable-proposal rule and return customer-safe errors for invalid confirmations in `src/agent/transaction_agent/models.py` and `src/agent/transaction_agent/engine.py`.
-- [ ] T027 [US3] Record masked confirmation attempts and outcomes with correlation IDs in `src/agent/transaction_agent/logging_service.py`.
+- [X] T025 [US3] Implement explicit-confirmation validation and stable local mock case-ID creation in `src/agent/transaction_agent/engine.py`.
+- [X] T026 [US3] Enforce the immutable-proposal rule and return customer-safe errors for invalid confirmations in `src/agent/transaction_agent/models.py` and `src/agent/transaction_agent/engine.py`.
+- [X] T027 [US3] Record masked confirmation attempts and outcomes with correlation IDs in `src/agent/transaction_agent/logging_service.py`.
 
 **Checkpoint**: Confirmed proposals create only local mock cases; every other path returns no case.
 
@@ -122,10 +122,10 @@ receive one deterministic local mock case ID; confirm merchant-refund guidance a
 
 **Purpose**: Prove the component is safe, shared-data-compatible, and ready for API integration.
 
-- [ ] T028 [P] Add PII masking, correlation propagation, and log-content tests in `src/agent/tests/test_safety_and_logging.py`.
-- [ ] T029 [P] Add callable-contract tests against `specs/002-transaction-triage-agent/contracts/transaction-agent.md` in `src/agent/tests/test_contract.py`.
-- [ ] T030 Run and correct Ruff findings under `src/agent/` using `uv run --directory src/agent ruff check .` and `uv run --directory src/agent ruff format --check .`.
-- [ ] T031 Run the end-to-end scenarios in `specs/002-transaction-triage-agent/quickstart.md` and remove obsolete agent fixture paths or boilerplate from `src/agent/`.
+- [X] T028 [P] Add PII masking, correlation propagation, and log-content tests in `src/agent/tests/test_safety_and_logging.py`.
+- [X] T029 [P] Add callable-contract tests against `specs/002-transaction-triage-agent/contracts/transaction-agent.md` in `src/agent/tests/test_contract.py`.
+- [X] T030 Run and correct Ruff findings under `src/agent/` using `uv run --directory src/agent ruff check .` and `uv run --directory src/agent ruff format --check .`.
+- [X] T031 Run the end-to-end scenarios in `specs/002-transaction-triage-agent/quickstart.md` and remove obsolete agent fixture paths or boilerplate from `src/agent/`.
 
 ---
 
