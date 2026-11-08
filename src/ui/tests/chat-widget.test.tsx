@@ -8,7 +8,7 @@ describe("chat widget", () => {
     expect(screen.getByAltText("Westpac")).toBeInTheDocument();
     expect(screen.getByText("Report $50 at Woolworths")).toBeInTheDocument();
     expect(screen.getByText(/Hello, I can help/i)).toBeInTheDocument();
-    fireEvent.click(screen.getByText("Restart"));
+    fireEvent.click(screen.getByText("Restart chat"));
     expect(screen.getByText(/Hello, I can help/i)).toBeInTheDocument();
   });
 });

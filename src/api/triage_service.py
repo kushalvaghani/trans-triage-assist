@@ -114,7 +114,7 @@ def evaluate_submission(
     if not merchant_known:
         outcome = Outcome.FRAUD_SCAM
         message = "We have proposed a Fraud/scam case based on the merchant being unknown."
-        next_steps = ["Review the proposed Fraud/scam details.", "Confirm to create a mock case."]
+        next_steps = ["Review the proposed Fraud/scam details.", "Confirm to create a case."]
     elif merchant_refund_agreed:
         return SubmissionResponse(
             correlation_id=correlation_id,
@@ -125,11 +125,11 @@ def evaluate_submission(
     elif customer_made_purchase is False:
         outcome = Outcome.FRAUD_SCAM
         message = "We have proposed a Fraud/scam case because you did not make the purchase."
-        next_steps = ["Review the proposed Fraud/scam details.", "Confirm to create a mock case."]
+        next_steps = ["Review the proposed Fraud/scam details.", "Please get in touch if needed, and quote the case ID."]
     else:
         outcome = Outcome.DISPUTE
         message = "We have proposed a Dispute case for this transaction."
-        next_steps = ["Review the proposed Dispute details.", "Confirm to create a mock case."]
+        next_steps = ["Review the proposed Dispute details.", "Please get in touch if needed, and quote the case ID."]
 
     if not confirmed:
         raise ConfirmationRequiredError(
@@ -141,5 +141,5 @@ def evaluate_submission(
         outcome=outcome,
         message=message,
         next_steps=next_steps,
-        case_id=f"MOCK-{outcome.value.upper()}-{transaction_id.upper()}",
+        case_id=f"{outcome.value.upper()}-{transaction_id.upper()}",
     )

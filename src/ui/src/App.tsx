@@ -78,7 +78,7 @@ export default function App() {
       append({ role: "assistant", content: "Please contact the merchant to complete the agreed refund.", card: { type: "case", nextSteps: ["Contact the merchant about the agreed refund."] } });
       return;
     }
-    append({ role: "assistant", content: "", card: { type: "proposal", outcome, nextSteps: ["Review the proposed details.", "Confirm to create a mock case."] } });
+    append({ role: "assistant", content: "", card: { type: "proposal", outcome, nextSteps: ["Review the proposed details.", "Confirm to create a case."] } });
   };
 
   const answer = (value: boolean) => {
