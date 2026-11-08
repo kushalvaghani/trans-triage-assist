@@ -6,21 +6,21 @@
 
 | Component | Command | Result |
 |---|---|---|
-| API | `uv run --directory src/api pytest` | PASS — 16 tests passed |
+| API | `uv run --directory src/api pytest` | PASS — 17 tests passed |
 | API | `uv run --directory src/api ruff check .` | PASS |
 | API | `uv run --directory src/api ruff format --check .` | PASS |
 | API | Live Uvicorn request to `POST /exp-digiServicing-transctiontraige/v1/message` | PASS — found shared `txn-001` for “Report $50 at Woolworths” |
-| API | Live Uvicorn request to `POST /exp-digiServicing-transctiontraige/v1/submission` | PASS — confirmed Dispute returned `MOCK-DISPUTE-TXN-001` |
+| API | Live Uvicorn request to `POST /exp-digiServicing-transctiontraige/v1/submission` | PASS — returned a nine-character alphanumeric case ID and logged the answers, outcome, user ID, and case ID |
 | Shared data | JSON parse, unique-ID, one-customer, and 50-record validation for `sample_data/transactions.json` | PASS |
 | Agent | `uv run --directory src/agent pytest` | PASS — 16 tests passed |
 | Agent | `uv run --directory src/agent ruff check .` | PASS |
 | Agent | `uv run --directory src/agent ruff format --check .` | PASS |
 | Agent | Agent lock and dependencies: `uv sync --directory src/agent --extra dev` | PASS |
-| UI | `npm test -- --run` from `src/ui` | PASS — 6 tests across API client, chat, transaction, triage, confirmation, and alternatives components |
+| UI | `npm test -- --run` from `src/ui` | PASS — 7 tests across API client, chat, transaction, triage, confirmation, and alternatives components |
 | UI | `npm run lint` from `src/ui` | PASS |
 | UI | `npm run build` from `src/ui` | PASS — TypeScript and Vite production build succeeded |
 | UI | Live Vite-to-API proxy search for “Report $50 at Woolworths” | PASS — displayed shared transaction `txn-001` |
-| UI | Headless Chrome visual checks | PASS — inspected default chat, matching transaction, and triage-question states |
+| UI | Headless Chrome visual checks | PASS — inspected default chat, matching transaction, triage-question, and disabled confirmed-case states |
 
 ## Local Verification
 
