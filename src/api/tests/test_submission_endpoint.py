@@ -1,11 +1,14 @@
 """Contract and decision-table tests for triage submission."""
 
+import re
+
 from fastapi.testclient import TestClient
 
 from api.app import app
 
 client = TestClient(app)
 SUBMISSION_PATH = "/exp-digiServicing-transctiontraige/v1/submission"
+CASE_ID_PATTERN = re.compile(r"^[A-Z0-9]{9}$")
 
 
 def submit(**overrides: object):
@@ -26,7 +29,7 @@ def test_submission_returns_dispute_case_after_confirmation() -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["outcome"] == "dispute"
-    assert body["case_id"] == "MOCK-DISPUTE-TXN-001"
+    assert CASE_ID_PATTERN.fullmatch(body["case_id"])
 
 
 def test_unknown_merchant_returns_fraud_case() -> None:
@@ -38,7 +41,7 @@ def test_unknown_merchant_returns_fraud_case() -> None:
 
     assert response.status_code == 200
     assert response.json()["outcome"] == "fraud_scam"
-    assert response.json()["case_id"] == "MOCK-FRAUD_SCAM-TXN-001"
+    assert CASE_ID_PATTERN.fullmatch(response.json()["case_id"])
 
 
 def test_customer_did_not_make_purchase_returns_fraud_case() -> None:
@@ -63,13 +66,13 @@ def test_unconfirmed_submission_creates_no_case() -> None:
     assert "case_id" not in response.json()
 
 
-def test_repeated_confirmed_submission_uses_the_same_mock_case_id() -> None:
+def test_repeated_confirmed_submissions_receive_unique_case_ids() -> None:
     first_response = submit()
     second_response = submit()
 
     assert first_response.status_code == 200
     assert second_response.status_code == 200
-    assert first_response.json()["case_id"] == second_response.json()["case_id"]
+    assert first_response.json()["case_id"] != second_response.json()["case_id"]
 
 
 def test_missing_follow_up_answer_is_rejected() -> None:

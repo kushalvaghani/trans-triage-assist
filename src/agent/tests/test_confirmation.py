@@ -1,7 +1,11 @@
 """Tests for the immutable proposal and confirmation gate."""
 
+import re
+
 from transaction_agent.engine import process_interaction
 from transaction_agent.models import AgentInteraction, ResultKind, TriageSession
+
+CASE_ID_PATTERN = re.compile(r"^[A-Z0-9]{9}$")
 
 
 def fraud_proposal_session() -> TriageSession:
@@ -18,11 +22,11 @@ def test_confirmation_before_proposal_is_rejected() -> None:
     assert result.case_id is None
 
 
-def test_confirmed_proposal_returns_a_stable_mock_case() -> None:
+def test_confirmed_proposal_returns_a_stable_alphanumeric_case_id() -> None:
     session = fraud_proposal_session()
     first = process_interaction(AgentInteraction(confirmed=True), session)
     second = process_interaction(AgentInteraction(confirmed=True), first.session)
 
     assert first.kind is ResultKind.CASE_CREATED
-    assert first.case_id == "MOCK-FRAUD_SCAM-TXN-001"
+    assert CASE_ID_PATTERN.fullmatch(first.case_id or "")
     assert second.case_id == first.case_id

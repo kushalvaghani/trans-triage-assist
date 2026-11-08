@@ -23,7 +23,9 @@ export default function App() {
   const [selected, setSelected] = useState<Transaction>();
   const [answers, setAnswers] = useState<TriageAnswers>({});
   const [proposal, setProposal] = useState<Outcome>();
+  const [caseCreated, setCaseCreated] = useState(false);
   const requestVersion = useRef(0);
+  const isConfirming = useRef(false);
   const transcript = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,6 +43,8 @@ export default function App() {
     setSelected(undefined);
     setAnswers({});
     setProposal(undefined);
+    setCaseCreated(false);
+    isConfirming.current = false;
     setPending(false);
   };
 
@@ -67,6 +71,8 @@ export default function App() {
     setSelected(transaction);
     setAnswers({});
     setProposal(undefined);
+    setCaseCreated(false);
+    isConfirming.current = false;
     append({ role: "customer", content: `Select ${transaction.merchant} for $${transaction.amount}` });
     append({ role: "assistant", content: "", card: { type: "question", question: "merchant_known" } });
   };
@@ -106,14 +112,17 @@ export default function App() {
   };
 
   const confirm = async () => {
-    if (!selected || !proposal || proposal === "merchant_refund_guidance" || answers.merchantKnown === undefined) return;
+    if (isConfirming.current || caseCreated || !selected || !proposal || proposal === "merchant_refund_guidance" || answers.merchantKnown === undefined) return;
+    isConfirming.current = true;
     setPending(true);
     try {
       const result = await submitTriage(selected.transaction_id, answers as Required<TriageAnswers>, true, correlationId);
       append({ role: "assistant", content: result.message, card: result.case_id ? { type: "case", caseId: result.case_id, nextSteps: result.next_steps } : undefined });
+      if (result.case_id) setCaseCreated(true);
     } catch (error) {
       append({ role: "assistant", content: error instanceof Error ? error.message : "We could not process that request." });
     } finally {
+      isConfirming.current = false;
       setPending(false);
     }
   };
@@ -122,7 +131,7 @@ export default function App() {
     if (!card) return null;
     if (card.type === "transaction") return <TransactionCard onSelect={() => chooseTransaction(card.transaction)} transaction={card.transaction} />;
     if (card.type === "question") return <TriageQuestionCard onAnswer={answer} question={card.question} />;
-    if (card.type === "proposal") return <ProposalCard nextSteps={card.nextSteps} onConfirm={confirm} outcome={card.outcome} />;
+    if (card.type === "proposal") return <ProposalCard disabled={pending || caseCreated} nextSteps={card.nextSteps} onConfirm={confirm} outcome={card.outcome} />;
     if (card.type === "case") return <CaseCard caseId={card.caseId} nextSteps={card.nextSteps} />;
     return <MerchantAlternatives merchants={card.merchants} onSelect={(merchant) => report(`Report $50 at ${merchant}`)} />;
   };

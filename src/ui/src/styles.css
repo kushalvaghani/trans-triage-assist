@@ -24,7 +24,7 @@ button.card:hover, .merchant-list button:hover { border-color: #b5121b; }
 .preset { margin-bottom: 10px; font-size: .85rem; }
 .composer__row { display: flex; gap: 8px; }
 .composer input { flex: 1; min-width: 0; padding: 11px 12px; border: 1px solid #a7b1b7; border-radius: 8px; }
-.composer button:disabled { opacity: .55; cursor: not-allowed; }
+.card button:disabled, .composer button:disabled { opacity: .55; cursor: not-allowed; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 button:focus-visible, input:focus-visible { outline: 3px solid #0064a7; outline-offset: 2px; }
 @media (max-width: 560px) { .app-shell { padding: 0; } .chat { height: 100vh; border-radius: 0; } .composer__row { flex-wrap: wrap; } .composer input { flex-basis: 100%; } .message { max-width: 96%; } }

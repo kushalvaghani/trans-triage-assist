@@ -6,6 +6,8 @@ import json
 import re
 from decimal import Decimal
 from pathlib import Path
+from secrets import choice
+from string import ascii_uppercase, digits
 from uuid import UUID
 
 from .models import MessageResponse, Outcome, ResponseType, SubmissionResponse, Transaction
@@ -14,6 +16,8 @@ DATA_PATH = Path(__file__).parents[2] / "sample_data" / "transactions.json"
 MERCHANTS = ("Woolworths", "Coles", "Aldi", "ZeroCoffee", "AlphaShop")
 REPORTING_KEYWORDS = ("report", "recognise", "recognize", "dispute", "fraud", "transaction")
 AMOUNT_PATTERN = re.compile(r"(?:\$\s*(\d+(?:\.\d{1,2})?))|(?:(\d+(?:\.\d{1,2})?)\s*\$)")
+CASE_ID_ALPHABET = ascii_uppercase + digits
+ISSUED_CASE_IDS: set[str] = set()
 
 
 class TransactionNotFoundError(ValueError):
@@ -22,6 +26,15 @@ class TransactionNotFoundError(ValueError):
 
 class ConfirmationRequiredError(ValueError):
     """Raised when a case-creating outcome lacks explicit customer confirmation."""
+
+
+def _new_case_id() -> str:
+    """Generate a unique nine-character alphanumeric identifier for this mock API process."""
+    while True:
+        case_id = "".join(choice(CASE_ID_ALPHABET) for _ in range(9))
+        if case_id not in ISSUED_CASE_IDS:
+            ISSUED_CASE_IDS.add(case_id)
+            return case_id
 
 
 def load_transactions() -> list[Transaction]:
@@ -125,11 +138,17 @@ def evaluate_submission(
     elif customer_made_purchase is False:
         outcome = Outcome.FRAUD_SCAM
         message = "We have proposed a Fraud/scam case because you did not make the purchase."
-        next_steps = ["Review the proposed Fraud/scam details.", "Please get in touch if needed, and quote the case ID."]
+        next_steps = [
+            "Review the proposed Fraud/scam details.",
+            "Please get in touch if needed, and quote the case ID.",
+        ]
     else:
         outcome = Outcome.DISPUTE
         message = "We have proposed a Dispute case for this transaction."
-        next_steps = ["Review the proposed Dispute details.", "Please get in touch if needed, and quote the case ID."]
+        next_steps = [
+            "Review the proposed Dispute details.",
+            "Please get in touch if needed, and quote the case ID.",
+        ]
 
     if not confirmed:
         raise ConfirmationRequiredError(
@@ -141,5 +160,5 @@ def evaluate_submission(
         outcome=outcome,
         message=message,
         next_steps=next_steps,
-        case_id=f"{outcome.value.upper()}-{transaction_id.upper()}",
+        case_id=_new_case_id(),
     )

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from secrets import choice
+from string import ascii_uppercase, digits
+
 from .logging_service import log_event
 from .models import (
     AgentInteraction,
@@ -21,6 +24,17 @@ QUESTION_MESSAGES = {
     Question.MERCHANT_REFUND_AGREED: "Did you contact the merchant and did they agree to refund?",
     Question.CUSTOMER_MADE_PURCHASE: "Did you make the purchase?",
 }
+CASE_ID_ALPHABET = ascii_uppercase + digits
+ISSUED_CASE_IDS: set[str] = set()
+
+
+def _new_case_id() -> str:
+    """Generate a unique nine-character alphanumeric identifier for this agent process."""
+    while True:
+        case_id = "".join(choice(CASE_ID_ALPHABET) for _ in range(9))
+        if case_id not in ISSUED_CASE_IDS:
+            ISSUED_CASE_IDS.add(case_id)
+            return case_id
 
 
 def _result(
@@ -131,10 +145,7 @@ def _handle_confirmation(interaction: AgentInteraction, session: TriageSession) 
             session,
             proposal=session.proposal,
         )
-    case_id = session.case_id or (
-        f"MOCK-{session.proposal.outcome.value.upper()}-"
-        f"{session.selected_transaction.transaction_id.upper()}"
-    )
+    case_id = session.case_id or _new_case_id()
     next_session = session.model_copy(update={"case_id": case_id})
     return _result(
         interaction,
