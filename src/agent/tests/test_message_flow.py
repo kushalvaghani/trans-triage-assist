@@ -18,3 +18,12 @@ def test_requests_details_when_no_supported_transaction_details_exist() -> None:
 
     assert result.kind is ResultKind.REQUEST_DETAILS
     assert "merchant" in result.message.lower()
+
+
+def test_returns_alternatives_for_an_unmatched_merchant() -> None:
+    result = process_interaction(
+        AgentInteraction(message="Report $99 at UnknownMart"), TriageSession()
+    )
+
+    assert result.kind is ResultKind.NOT_FOUND
+    assert len(result.transactions) == 3

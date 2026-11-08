@@ -4,6 +4,7 @@ from uuid import UUID
 
 from fastapi.testclient import TestClient
 
+from api import triage_service
 from api.app import app
 
 client = TestClient(app)
@@ -18,6 +19,22 @@ def test_message_endpoint_returns_exact_mock_transaction() -> None:
     UUID(body["correlation_id"])
     assert body["response_type"] == "transaction_matches"
     assert body["transactions"][0]["transaction_id"] == "txn-001"
+
+
+def test_message_endpoint_delegates_to_the_agent(monkeypatch) -> None:
+    calls = []
+    original = triage_service.process_interaction
+
+    def tracked_process_interaction(*args, **kwargs):
+        calls.append(args[0])
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(triage_service, "process_interaction", tracked_process_interaction)
+
+    response = client.post(MESSAGE_PATH, json={"message": "Report $50 at Woolworths"})
+
+    assert response.status_code == 200
+    assert calls[0].message == "Report $50 at Woolworths"
 
 
 def test_message_endpoint_accepts_a_merchant_and_amount_without_report_keyword() -> None:

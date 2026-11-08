@@ -19,6 +19,7 @@ current session. The agent returns an updated session plus exactly one customer-
 | Kind | Required content | Case ID |
 |---|---|---|
 | `transaction_matches` | Exact match or three ranked alternatives | Never |
+| `not_found` | Three ranked alternatives for an unavailable merchant | Never |
 | `request_details` | Safe prompt for merchant or amount | Never |
 | `triage_question` | Next ordered question and session state | Never |
 | `proposal` | Immutable Fraud/scam or Dispute preview and next steps | Never |

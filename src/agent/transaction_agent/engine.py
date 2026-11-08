@@ -94,7 +94,7 @@ def _proposal(
     proposal = TriageProposal(
         outcome=outcome,
         message=f"We have proposed a {label} case for this transaction.",
-        next_steps=[f"Review the proposed {label} details.", "Confirm to create a mock case."],
+        next_steps=[f"Review the proposed {label} details.", "Confirm to create a case."],
     )
     next_session = session.model_copy(update={"proposal": proposal, "question": None})
     return _result(
@@ -152,12 +152,20 @@ def _handle_confirmation(interaction: AgentInteraction, session: TriageSession) 
         )
     case_id = session.case_id or _new_case_id()
     next_session = session.model_copy(update={"case_id": case_id})
+    case_details = session.proposal.model_copy(
+        update={
+            "next_steps": [
+                "Keep this case ID for your records.",
+                "We will contact you if anything further is needed.",
+            ]
+        }
+    )
     return _result(
         interaction,
         ResultKind.CASE_CREATED,
-        "Your mock case has been created. Follow the next steps provided.",
+        "Your case has been created. Follow the next steps provided.",
         next_session,
-        proposal=next_session.proposal,
+        proposal=case_details,
         case_id=case_id,
     )
 
@@ -197,14 +205,14 @@ def process_interaction(interaction: AgentInteraction, session: TriageSession) -
 
     merchants = extract_merchants(masked_message)
     amounts = extract_amounts(masked_message)
-    if len(merchants) != 1 or len(amounts) != 1:
+    if len(merchants) > 1 or len(amounts) != 1:
         return _result(
             interaction,
             ResultKind.REQUEST_DETAILS,
             "Please provide one supported merchant and one dollar amount for the transaction.",
             session,
         )
-    if not is_reporting_intent(masked_message):
+    if not is_reporting_intent(masked_message) and not merchants:
         return _result(
             interaction,
             ResultKind.REQUEST_DETAILS,
@@ -212,7 +220,8 @@ def process_interaction(interaction: AgentInteraction, session: TriageSession) -
             session,
         )
 
-    matches, alternatives = find_transactions(merchants[0], amounts[0])
+    merchant = merchants[0] if merchants else ""
+    matches, alternatives = find_transactions(merchant, amounts[0])
     if matches:
         return _result(
             interaction,
@@ -223,8 +232,8 @@ def process_interaction(interaction: AgentInteraction, session: TriageSession) -
         )
     return _result(
         interaction,
-        ResultKind.TRANSACTION_MATCHES,
-        "We could not find an exact transaction. Please review these alternatives.",
+        ResultKind.NOT_FOUND,
+        "Could not find the merchant, please search for other transactions.",
         session,
         transactions=alternatives,
     )

@@ -14,6 +14,7 @@ class ResultKind(StrEnum):
     """Customer-safe results emitted by the agent."""
 
     TRANSACTION_MATCHES = "transaction_matches"
+    NOT_FOUND = "not_found"
     REQUEST_DETAILS = "request_details"
     TRIAGE_QUESTION = "triage_question"
     PROPOSAL = "proposal"

@@ -1,23 +1,15 @@
-"""Deterministic local transaction matching and triage decisions."""
+"""Adapter that exposes the deterministic agent through the local HTTP API."""
 
 from __future__ import annotations
 
-import json
-import re
-from decimal import Decimal
-from pathlib import Path
-from secrets import choice
-from string import ascii_uppercase, digits
 from uuid import UUID
 
-from .models import MessageResponse, Outcome, ResponseType, SubmissionResponse, Transaction
+from transaction_agent.engine import process_interaction
+from transaction_agent.models import AgentInteraction, ResultKind, TriageSession
+from transaction_agent.models import Transaction as AgentTransaction
+from transaction_agent.parsing import MERCHANTS
 
-DATA_PATH = Path(__file__).parents[2] / "sample_data" / "transactions.json"
-MERCHANTS = ("Woolworths", "Coles", "Aldi", "ZeroCoffee", "AlphaShop")
-REPORTING_KEYWORDS = ("report", "recognise", "recognize", "dispute", "fraud", "transaction")
-AMOUNT_PATTERN = re.compile(r"(?:\$\s*(\d+(?:\.\d{1,2})?))|(?:(\d+(?:\.\d{1,2})?)\s*\$)")
-CASE_ID_ALPHABET = ascii_uppercase + digits
-ISSUED_CASE_IDS: set[str] = set()
+from .models import MessageResponse, Outcome, ResponseType, SubmissionResponse, Transaction
 
 
 class TransactionNotFoundError(ValueError):
@@ -28,86 +20,61 @@ class ConfirmationRequiredError(ValueError):
     """Raised when a case-creating outcome lacks explicit customer confirmation."""
 
 
-def _new_case_id() -> str:
-    """Generate a unique nine-character alphanumeric identifier for this mock API process."""
-    while True:
-        case_id = "".join(choice(CASE_ID_ALPHABET) for _ in range(9))
-        if case_id not in ISSUED_CASE_IDS:
-            ISSUED_CASE_IDS.add(case_id)
-            return case_id
+def _transactions(result_transactions: list[AgentTransaction]) -> list[Transaction]:
+    """Convert the agent's transaction models into the API response contract."""
+    return [
+        Transaction.model_validate(transaction.model_dump()) for transaction in result_transactions
+    ]
 
 
-def load_transactions() -> list[Transaction]:
-    """Load the version-controlled mock transaction fixture."""
-    with DATA_PATH.open(encoding="utf-8") as data_file:
-        return [Transaction.model_validate(item) for item in json.load(data_file)]
+def _alternative_merchants(transactions: list[Transaction]) -> list[str]:
+    """Supply exactly three customer-visible alternatives from agent search results."""
+    merchants = list(dict.fromkeys(transaction.merchant for transaction in transactions))
+    for merchant in MERCHANTS:
+        if merchant not in merchants:
+            merchants.append(merchant)
+        if len(merchants) == 3:
+            break
+    return merchants
 
 
-def _extract_merchant(message: str) -> str | None:
-    lowered = message.lower()
-    return next((merchant for merchant in MERCHANTS if merchant.lower() in lowered), None)
-
-
-def _extract_amount(message: str) -> Decimal | None:
-    match = AMOUNT_PATTERN.search(message)
-    if not match:
-        return None
-    return Decimal(match.group(1) or match.group(2)).quantize(Decimal("0.01"))
-
-
-def _closest_transactions(
-    transactions: list[Transaction], merchant: str | None, amount: Decimal | None
-) -> list[Transaction]:
-    """Return three deterministic alternatives, preferring merchant then amount similarity."""
-    comparison_amount = amount or Decimal("0")
-    return sorted(
-        transactions,
-        key=lambda transaction: (
-            merchant is None or transaction.merchant.lower() != merchant.lower(),
-            abs(transaction.amount - comparison_amount),
-            transaction.transaction_id,
-        ),
-    )[:3]
+def _answer(value: bool) -> str:
+    """Use the agent's public yes/no interaction contract for a boolean API answer."""
+    return "yes" if value else "no"
 
 
 def process_message(message: str, correlation_id: UUID) -> MessageResponse:
-    """Classify a masked message and return mock matches, alternatives, or safe redirection."""
-    lowered = message.lower()
-    merchant = _extract_merchant(message)
-    amount = _extract_amount(message)
-    has_reporting_intent = any(keyword in lowered for keyword in REPORTING_KEYWORDS)
-    if not has_reporting_intent and (merchant is None or amount is None):
+    """Delegate message classification and transaction lookup to the agent."""
+    result = process_interaction(
+        AgentInteraction(message=message, correlation_id=correlation_id), TriageSession()
+    )
+    transactions = _transactions(result.transactions)
+
+    if result.kind is ResultKind.TRANSACTION_MATCHES:
+        return MessageResponse(
+            correlation_id=correlation_id,
+            response_type=ResponseType.TRANSACTION_MATCHES,
+            message=result.message,
+            transactions=transactions,
+        )
+    if result.kind is ResultKind.NOT_FOUND:
+        return MessageResponse(
+            correlation_id=correlation_id,
+            response_type=ResponseType.NOT_FOUND,
+            message=result.message,
+            transactions=transactions,
+            alternative_merchants=_alternative_merchants(transactions),
+        )
+    if result.kind is ResultKind.REQUEST_DETAILS:
         return MessageResponse(
             correlation_id=correlation_id,
             response_type=ResponseType.REDIRECTION,
             message="I am here to help you with any issues with transactions.",
         )
-
-    transactions = load_transactions()
-    if merchant is not None and amount is not None:
-        exact_matches = [
-            transaction
-            for transaction in transactions
-            if transaction.merchant == merchant and transaction.amount == amount
-        ]
-        if exact_matches:
-            return MessageResponse(
-                correlation_id=correlation_id,
-                response_type=ResponseType.TRANSACTION_MATCHES,
-                message="We found a matching transaction for you to review.",
-                transactions=exact_matches,
-            )
-
-    alternatives = _closest_transactions(transactions, merchant, amount)
-    alternative_merchants = list(dict.fromkeys(item.merchant for item in alternatives))
-    while len(alternative_merchants) < 3:
-        alternative_merchants.append(MERCHANTS[len(alternative_merchants)])
     return MessageResponse(
         correlation_id=correlation_id,
-        response_type=ResponseType.NOT_FOUND,
-        message="Could not find the merchant, please search for other transactions.",
-        transactions=alternatives,
-        alternative_merchants=alternative_merchants[:3],
+        response_type=ResponseType.ERROR,
+        message="We could not process that request. Please try again.",
     )
 
 
@@ -120,45 +87,56 @@ def evaluate_submission(
     confirmed: bool,
     correlation_id: UUID,
 ) -> SubmissionResponse:
-    """Apply the constitution's fixed triage decision table to one selected transaction."""
-    if not any(item.transaction_id == transaction_id for item in load_transactions()):
+    """Reconstruct the submitted triage path through the agent and map its final result."""
+    result = process_interaction(
+        AgentInteraction(selected_transaction_id=transaction_id, correlation_id=correlation_id),
+        TriageSession(),
+    )
+    if result.kind is ResultKind.ERROR:
         raise TransactionNotFoundError("Selected transaction was not found.")
 
-    if not merchant_known:
-        outcome = Outcome.FRAUD_SCAM
-        message = "We have proposed a Fraud/scam case based on the merchant being unknown."
-        next_steps = ["Review the proposed Fraud/scam details.", "Confirm to create a case."]
-    elif merchant_refund_agreed:
+    result = process_interaction(
+        AgentInteraction(message=_answer(merchant_known), correlation_id=correlation_id),
+        result.session,
+    )
+    if merchant_known:
+        result = process_interaction(
+            AgentInteraction(
+                message=_answer(merchant_refund_agreed is True), correlation_id=correlation_id
+            ),
+            result.session,
+        )
+        if merchant_refund_agreed is False:
+            result = process_interaction(
+                AgentInteraction(
+                    message=_answer(customer_made_purchase is True), correlation_id=correlation_id
+                ),
+                result.session,
+            )
+
+    if result.kind is ResultKind.MERCHANT_REFUND_GUIDANCE:
         return SubmissionResponse(
             correlation_id=correlation_id,
             outcome=Outcome.MERCHANT_REFUND_GUIDANCE,
-            message="Please contact the merchant to complete the agreed refund.",
-            next_steps=["Contact the merchant about the agreed refund."],
+            message=result.message,
+            next_steps=result.proposal.next_steps if result.proposal else [],
         )
-    elif customer_made_purchase is False:
-        outcome = Outcome.FRAUD_SCAM
-        message = "We have proposed a Fraud/scam case because you did not make the purchase."
-        next_steps = [
-            "Review the proposed Fraud/scam details.",
-            "Please get in touch if needed, and quote the case ID.",
-        ]
-    else:
-        outcome = Outcome.DISPUTE
-        message = "We have proposed a Dispute case for this transaction."
-        next_steps = [
-            "Review the proposed Dispute details.",
-            "Please get in touch if needed, and quote the case ID.",
-        ]
-
+    if result.kind is not ResultKind.PROPOSAL or result.proposal is None:
+        raise TransactionNotFoundError("Selected transaction could not be triaged.")
     if not confirmed:
         raise ConfirmationRequiredError(
             "Please confirm the proposed outcome before submitting a case."
         )
 
+    confirmed_result = process_interaction(
+        AgentInteraction(confirmed=True, correlation_id=correlation_id), result.session
+    )
+    if confirmed_result.kind is not ResultKind.CASE_CREATED or confirmed_result.proposal is None:
+        raise ConfirmationRequiredError("We could not create that case. Please try again.")
     return SubmissionResponse(
         correlation_id=correlation_id,
-        outcome=outcome,
-        message=message,
-        next_steps=next_steps,
-        case_id=_new_case_id(),
+        outcome=Outcome(confirmed_result.proposal.outcome.value),
+        message=confirmed_result.message,
+        next_steps=confirmed_result.proposal.next_steps,
+        case_id=confirmed_result.case_id,
     )

@@ -21,8 +21,8 @@ customer records. No database or cloud logging service was built.
 ## 4. UI speaks only to the API
 
 **Decision:** Keep the UI behind the HTTP API boundary and prevent direct fixture/agent access.
-**Trade-off:** Preserves component separation. The standalone agent is not yet wired into API request
-handling, so a shared agent-session API contract remains future work.
+**Trade-off:** Preserves component separation while the API invokes the deterministic agent for
+message lookup and submission triage. A shared agent-session API contract remains future work.
 
 ## 5. Mock identity and case IDs
 

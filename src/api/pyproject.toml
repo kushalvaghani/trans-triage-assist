@@ -10,6 +10,7 @@ requires-python = ">=3.12"
 dependencies = [
   "fastapi>=0.115,<1.0",
   "pydantic>=2.10,<3.0",
+  "transaction-triage-agent",
   "uvicorn>=0.30,<1.0",
 ]
 
@@ -19,6 +20,10 @@ dev = [
   "pytest>=8.0,<9.0",
   "ruff>=0.8,<1.0",
 ]
+
+[[tool.uv.index]]
+url = "https://artifactory.srv.westpac.com.au/artifactory/api/pypi/westpac-pypi/simple"
+default = true
 
 [tool.setuptools]
 packages = ["api"]
@@ -41,3 +46,6 @@ select = ["E", "F", "I", "UP", "B"]
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[tool.uv.sources]
+transaction-triage-agent = { path = "../agent", editable = true }

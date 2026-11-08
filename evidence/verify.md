@@ -6,13 +6,13 @@
 
 | Component | Command | Result |
 |---|---|---|
-| API | `uv run --directory src/api pytest` | PASS — 17 tests passed |
+| API | `uv run --directory src/api pytest` | PASS — 19 tests passed, including API-to-agent message and submission delegation |
 | API | `uv run --directory src/api ruff check .` | PASS |
 | API | `uv run --directory src/api ruff format --check .` | PASS |
-| API | Live Uvicorn request to `POST /exp-digiServicing-transctiontraige/v1/message` | PASS — found shared `txn-001` for “Report $50 at Woolworths” |
+| API | Live Uvicorn request to `POST /exp-digiServicing-transctiontraige/v1/message` | PASS — delegated to the agent and found shared `txn-001` for “Report $50 at Woolworths” |
 | API | Live Uvicorn request to `POST /exp-digiServicing-transctiontraige/v1/submission` | PASS — returned a nine-character alphanumeric case ID and logged the answers, outcome, user ID, and case ID |
 | Shared data | JSON parse, unique-ID, one-customer, and 50-record validation for `sample_data/transactions.json` | PASS |
-| Agent | `uv run --directory src/agent pytest` | PASS — 16 tests passed |
+| Agent | `uv run --directory src/agent pytest` | PASS — 17 tests passed |
 | Agent | `uv run --directory src/agent ruff check .` | PASS |
 | Agent | `uv run --directory src/agent ruff format --check .` | PASS |
 | Agent | Agent lock and dependencies: `uv sync --directory src/agent --extra dev` | PASS |
@@ -58,21 +58,17 @@ When a pipeline is added, it should run the same isolated API and agent suites:
 1. `uv sync --directory src/api --extra dev --locked`, followed by API pytest and Ruff checks.
 2. `uv sync --directory src/agent --extra dev --locked`, followed by agent pytest and Ruff checks.
 3. JSON validation for `sample_data/transactions.json` and a smoke test that imports both packages.
-4. An API-to-agent integration test after the API is wired to call `process_interaction`.
+4. API-to-agent integration tests that exercise `process_interaction` through the API endpoints.
 5. `npm ci --prefix src/ui`, then UI Vitest, ESLint, TypeScript/Vite build, and a browser smoke test.
 
 ## Known Gaps
 
-- The API still uses `src/api/triage_service.py`; it does not yet invoke the agent's
-  `transaction_agent.engine.process_interaction` function.
 - The UI calls only the documented API routes. Current API responses do not expose a session contract for
   transaction selection and one-question-at-a-time triage, so the UI renders that guided flow locally and
   calls `/submission` only after explicit confirmation. It does not access agent code or shared fixture
   data directly.
-- The current API does not return merchant alternatives for unmatched searches, so the UI alternative
-  cards are covered by component tests but not by a live API smoke test.
-- The API and agent each have unit/integration tests, but there is no cross-component API-to-agent
-  integration test until the wiring is implemented.
+- The API-to-agent adapter is covered by an endpoint test, but the API does not yet expose the
+  agent's per-question session state as an HTTP contract.
 - FastAPI's `TestClient` currently emits a Starlette deprecation warning about its `httpx` integration.
   It does not fail the test suite.
 - No automated PR/pipeline checks are configured.

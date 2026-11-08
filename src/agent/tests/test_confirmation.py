@@ -39,4 +39,6 @@ def test_confirmed_proposal_returns_a_stable_alphanumeric_case_id(
     assert first.kind is ResultKind.CASE_CREATED
     assert CASE_ID_PATTERN.fullmatch(first.case_id or "")
     assert second.case_id == first.case_id
+    assert first.proposal is not None
+    assert "Confirm to create a case." not in first.proposal.next_steps
     assert first.case_id in (tmp_path / f"{correlation_id}.jsonl").read_text(encoding="utf-8")

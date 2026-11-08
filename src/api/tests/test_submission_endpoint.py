@@ -4,6 +4,7 @@ import re
 
 from fastapi.testclient import TestClient
 
+from api import triage_service
 from api.app import app
 
 client = TestClient(app)
@@ -30,6 +31,23 @@ def test_submission_returns_dispute_case_after_confirmation() -> None:
     body = response.json()
     assert body["outcome"] == "dispute"
     assert CASE_ID_PATTERN.fullmatch(body["case_id"])
+
+
+def test_submission_reconstructs_triage_with_the_agent(monkeypatch) -> None:
+    calls = []
+    original = triage_service.process_interaction
+
+    def tracked_process_interaction(*args, **kwargs):
+        calls.append(args[0])
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(triage_service, "process_interaction", tracked_process_interaction)
+
+    response = submit()
+
+    assert response.status_code == 200
+    assert calls[0].selected_transaction_id == "txn-001"
+    assert calls[-1].confirmed is True
 
 
 def test_unknown_merchant_returns_fraud_case() -> None:
