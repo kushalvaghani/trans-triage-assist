@@ -4,11 +4,18 @@
 
 - Python 3.12
 - The project dependencies installed from the implementation's dependency manifest
-- A local mock transaction fixture containing 50–100 records under `src/api/sample_data/`
+- A local mock transaction fixture containing 50–100 records under `sample_data/`
 
 ## Run the Service
 
-From the repository root, start the local API using the application's documented development command.
+From the repository root, install the API's local development dependencies and start the application:
+
+```bash
+UV_DEFAULT_INDEX=https://artifactory.srv.westpac.com.au/artifactory/api/pypi/westpac-pypi/simple \
+UV_SYSTEM_CERTS=true uv sync --directory src/api --extra dev
+uv run --directory src/api uvicorn api.app:app --host 127.0.0.1 --port 8765
+```
+
 The service must expose the two paths in the [OpenAPI contract](contracts/transaction-triage-api.openapi.yaml).
 
 ## Validate Message Processing
@@ -45,5 +52,13 @@ Expected outcome:
 
 ## Run Automated Checks
 
-Run the implementation's pytest suite and Ruff checks. The suite must cover both endpoint contracts,
-confirmation gating, the three triage outcomes, PII masking, correlation IDs, and masked session logs.
+Run the implementation's pytest suite and Ruff checks:
+
+```bash
+uv run --directory src/api pytest
+uv run --directory src/api ruff check .
+uv run --directory src/api ruff format --check .
+```
+
+The suite covers both endpoint contracts, confirmation gating, the three triage outcomes, PII masking,
+correlation IDs, and masked session logs.

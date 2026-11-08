@@ -81,14 +81,14 @@ src/api/
 ├── triage_service.py        # API orchestration and confirmation gate
 ├── pii.py                   # Boundary masking helpers
 ├── logging_service.py        # Correlation-aware masked session logging
-├── sample_data/
-│   └── transactions.json    # 50–100 mocked transactions for one customer
 ├── logs/                    # Runtime local session logs; ignored by Git
 └── tests/
     ├── test_message_endpoint.py
     ├── test_submission_endpoint.py
     ├── test_pii_masking.py
     └── test_logging.py
+sample_data/
+└── transactions.json        # 50–100 mocked transactions shared by components
 ```
 
 **Structure Decision**: A single Python web-service component under `src/api` keeps the delivery
