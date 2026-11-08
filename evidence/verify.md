@@ -76,3 +76,34 @@ When a pipeline is added, it should run the same isolated API and agent suites:
 - FastAPI's `TestClient` currently emits a Starlette deprecation warning about its `httpx` integration.
   It does not fail the test suite.
 - No automated PR/pipeline checks are configured.
+
+## CI Command - Checks to run inside a CI pipeline
+
+The CI runner must provide the approved Python package index and system certificates. 
+
+These provide API/agent dependency check, Python tests and Ruff checks, UI install/test/lint/build.
+
+From the
+repository root, run:
+
+```bash copy Copy CI Checks
+set -euo pipefail
+
+UV_DEFAULT_INDEX=https://artifactory.srv.westpac.com.au/artifactory/api/pypi/westpac-pypi/simple \
+UV_SYSTEM_CERTS=true uv sync --directory src/api --extra dev --locked
+UV_DEFAULT_INDEX=https://artifactory.srv.westpac.com.au/artifactory/api/pypi/westpac-pypi/simple \
+UV_SYSTEM_CERTS=true uv sync --directory src/agent --extra dev --locked
+
+uv run --directory src/api pytest
+uv run --directory src/api ruff check .
+uv run --directory src/api ruff format --check .
+uv run --directory src/agent pytest
+uv run --directory src/agent ruff check .
+uv run --directory src/agent ruff format --check .
+
+npm --prefix src/ui ci
+npm --prefix src/ui test -- --run
+npm --prefix src/ui run lint
+npm --prefix src/ui run build
+
+```
