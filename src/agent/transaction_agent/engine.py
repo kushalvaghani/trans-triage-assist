@@ -51,7 +51,12 @@ def _result(
         session=session,
         **details,
     )
-    log_event(interaction.correlation_id, "agent_result", kind=kind.value)
+    log_event(
+        interaction.correlation_id,
+        "agent_result",
+        kind=kind.value,
+        case_id=details.get("case_id"),
+    )
     return result
 
 

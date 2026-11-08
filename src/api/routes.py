@@ -65,6 +65,12 @@ def post_submission(payload: SubmissionRequest) -> SubmissionResponse | JSONResp
         "submission_received",
         endpoint="/submission",
         transaction_id=masked_transaction_id,
+        triage_answers={
+            "merchant_known": payload.merchant_known,
+            "merchant_refund_agreed": payload.merchant_refund_agreed,
+            "customer_made_purchase": payload.customer_made_purchase,
+        },
+        confirmed=payload.confirmed,
     )
     try:
         response = evaluate_submission(
@@ -95,5 +101,6 @@ def post_submission(payload: SubmissionRequest) -> SubmissionResponse | JSONResp
         "submission_responded",
         endpoint="/submission",
         outcome=response.outcome,
+        case_id=response.case_id,
     )
     return response

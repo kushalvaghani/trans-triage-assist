@@ -5,8 +5,7 @@ __pycache__/
 .ruff_cache/
 dist/
 *.egg-info/
-src/api/logs/
-src/agent/logs/
+logs/
 src/ui/node_modules/
 src/ui/dist/
 src/ui/.env*

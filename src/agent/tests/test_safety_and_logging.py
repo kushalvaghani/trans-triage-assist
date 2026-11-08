@@ -24,3 +24,4 @@ def test_masks_pii_before_returning_or_logging(tmp_path: Path, monkeypatch) -> N
     assert result.correlation_id == correlation_id
     assert email not in content
     assert "[REDACTED]" in content
+    assert '"user_id": 599' in content
